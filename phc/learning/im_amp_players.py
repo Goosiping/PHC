@@ -353,8 +353,8 @@ class IMAMPPlayerContinuous(amp_players.AMPPlayerContinuous):
                         if self.print_stats:
                             if print_game_res:
                                 print("reward:", cur_rewards / done_count, "steps:", cur_steps / done_count, "w:", game_res,)
-                            else:
-                                print("reward:", cur_rewards / done_count, "steps:", cur_steps / done_count,)
+                            # else:
+                            #     print("reward:", cur_rewards / done_count, "steps:", cur_steps / done_count,)
 
                         sum_game_res += game_res
                         # if batch_size//self.num_agents == 1 or games_played >= n_games:

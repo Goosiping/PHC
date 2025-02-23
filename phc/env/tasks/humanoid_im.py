@@ -671,7 +671,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
     def post_physics_step(self):
         super().post_physics_step()
         
-        if flags.im_eval:
+        if True or flags.im_eval:
             motion_times = (self.progress_buf) * self.dt + self._motion_start_times + self._motion_start_times_offset  # already has time + 1, so don't need to + 1 to get the target for "this frame"
             motion_res = self._get_state_from_motionlib_cache(self._sampled_motion_ids, motion_times, self._global_offset)  # pass in the env_ids such that the motion is in synced.
             body_pos = self._rigid_body_pos
@@ -689,6 +689,15 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
             
                 self.obs_buf_t = self.obs_buf.cpu().numpy() # update to next time step
 
+        diff = (body_pos - motion_res['rg_pos']).squeeze()
+        diff = torch.norm(diff, dim=-1)
+        avg = diff.mean().item()
+        diff_min = diff.min().item()
+        diff_max = diff.max().item()
+        # import ipdb; ipdb.set_trace()
+        input()
+        print("MPJPE: {:.4f}, Avg : {:.2f}, Min: {:.2f}, Max: {:.2f}"
+              .format(self.extras['mpjpe'].item() * 1000, avg, diff_min, diff_max))
         return
 
     def _compute_observations(self, env_ids=None):
@@ -865,8 +874,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
                 self.ref_body_rot[env_ids] = ref_rb_rot
                 self.ref_body_pos_subset[env_ids] = ref_rb_pos_subset
                 self.ref_dof_pos[env_ids] = ref_dof_pos
-        
-        
+                
         return obs
 
     def _compute_reward(self, actions):

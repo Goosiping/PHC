@@ -13,5 +13,5 @@ env.obs_v=7 \
 env=env_im_getup_mcp \
 robot=smpl_humanoid \
 robot.real_weight_porpotion_boxes=False \
-env.motion_file=data/table_tennis/converted.pkl \
-env.models=['output/HumanoidIm/phc_kp_2/Humanoid.pth'] env.num_prim=3 env.num_envs=1  headless=False epoch=-1 test=True
+env.motion_file=data/table_tennis/converted_upright_axis.pkl \
+env.models=['output/HumanoidIm/phc_kp_2/Humanoid.pth'] env.num_prim=3 env.num_envs=1  headless=False epoch=-1 test=True\

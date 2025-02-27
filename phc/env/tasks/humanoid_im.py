@@ -691,13 +691,12 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
         diff = (body_pos - motion_res['rg_pos']).squeeze()
         diff = torch.norm(diff, dim=-1)
-        avg = diff.mean().item()
         diff_min = diff.min().item()
         diff_max = diff.max().item()
         # import ipdb; ipdb.set_trace()
-        input()
-        print("MPJPE: {:.4f}, Avg : {:.2f}, Min: {:.2f}, Max: {:.2f}"
-              .format(self.extras['mpjpe'].item() * 1000, avg, diff_min, diff_max))
+        # input()
+        # print("MPJPE: {:.4f}, Min: {:.2f}, Max: {:.2f}"
+        #       .format(self.extras['mpjpe'].item() * 1000, diff_min, diff_max))
         return
 
     def _compute_observations(self, env_ids=None):
@@ -874,7 +873,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
                 self.ref_body_rot[env_ids] = ref_rb_rot
                 self.ref_body_pos_subset[env_ids] = ref_rb_pos_subset
                 self.ref_dof_pos[env_ids] = ref_dof_pos
-                
+
         return obs
 
     def _compute_reward(self, actions):
@@ -1001,6 +1000,13 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
         motion_res = self._motion_lib.get_motion_state(motion_ids, motion_times, offset=offset)
 
         self.ref_motion_cache.update(motion_res)
+
+        # replace root trans
+        # orig_root = motion_res['root_pos']
+        # offset = self._rigid_body_pos[..., 0, :] - orig_root
+        # motion_res['root_pos'] = self._rigid_body_pos[..., 0, :]
+        # motion_res['rg_pos'] += offset.unsqueeze(1)
+        # import ipdb; ipdb.set_trace()
 
         return self.ref_motion_cache
 

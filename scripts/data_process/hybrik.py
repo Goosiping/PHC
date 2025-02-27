@@ -66,8 +66,8 @@ if __name__ == "__main__":
     amass_full_motion_dict = {}
 
     # Start processing one file
-    data_path = "./data/table_tennis/hps_track_0.npy"
-    # data_path = "/home/mislab/Guo/tram/results/example_video/hps/hps_track_0.npy"
+    data_path = "./data/table_tennis/res.pk"
+    
     # for data_path in tqdm(all_pkls):
     bound = 0
     splits = data_path.split("/")[7:]
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     
         
     # entry_data = dict(np.load(open(data_path, "rb"), allow_pickle=True))
-    entry_data = np.load(data_path, allow_pickle=True).item()
+    entry_data = joblib.load(data_path)
     
     framerate = 30
 
@@ -83,8 +83,9 @@ if __name__ == "__main__":
         bound = -2
     
     # rotation matrix transition
-    T, J, _, _ = entry_data['pred_rotmat'].shape
-    rot_mat = entry_data['pred_rotmat'].reshape(-1, 3, 3)
+    T = entry_data['pred_thetas'].shape[0]
+    J = 24
+    rot_mat = entry_data['pred_thetas'].reshape(-1, 3, 3)
     pose_aa = sRot.from_matrix(rot_mat).as_rotvec()
     pose_aa = pose_aa.reshape(T, J * 3)
 
@@ -94,9 +95,9 @@ if __name__ == "__main__":
         pose_aa[:, :3] = new_root
 
     skip = int(framerate/30)
-    root_trans = entry_data['pred_trans'][::skip, :].squeeze()
+    root_trans = entry_data['transl'][::skip, :].squeeze()
     # pose_aa = np.concatenate([entry_data['pose_24'][::skip, :66], np.zeros((root_trans.shape[0], 6))], axis = -1)
-    betas = entry_data['pred_shape'][0]
+    betas = entry_data['pred_betas'][0]
     gender = entry_data.get("gender", "neutral")
     N = pose_aa.shape[0]
     
@@ -104,9 +105,10 @@ if __name__ == "__main__":
         bound = N
         
     root_trans = root_trans[:bound]
-    root_trans[:, [1, 2]] = root_trans[:, [2, 1]]
     pose_aa = pose_aa[:bound]
     N = pose_aa.shape[0]
+    # root_trans[:,2] = 1
+    root_trans[:, [1, 2]] = root_trans[:, [2, 1]]
 
     # Guassian for root trans
     # filtered_root_trans = np.array(root_trans)
@@ -124,7 +126,7 @@ if __name__ == "__main__":
     smpl_local_robot.load_from_skeleton(betas=torch.from_numpy(beta[None,]), gender=gender_number, objs_info=None)
     smpl_local_robot.write_xml(f"phc/data/assets/mjcf/{robot_cfg['model']}_humanoid.xml")
     skeleton_tree = SkeletonTree.from_mjcf(f"phc/data/assets/mjcf/{robot_cfg['model']}_humanoid.xml")
-    root_trans_offset = (root_trans) + skeleton_tree.local_translation[0]
+    root_trans_offset = torch.from_numpy(root_trans) + skeleton_tree.local_translation[0]
 
     new_sk_state = SkeletonState.from_rotation_and_root_translation(
                 skeleton_tree,  # This is the wrong skeleton tree (location wise) here, but it's fine since we only use the parent relationship here. 
@@ -155,7 +157,6 @@ if __name__ == "__main__":
     # per_frame_offset = kpts_y.min(dim=1, keepdim=True)[0].abs()
     # print("INFO: per_frame_offset shape ", per_frame_offset.shape)
     # root_trans[:,1] = 10
-    # root_trans[:,2] = 1
     # root_trans_offset[:,2] = 0
 
     new_motion_out = {}
@@ -173,7 +174,7 @@ if __name__ == "__main__":
         
     # import ipdb; ipdb.set_trace()
     # output_dir = "data/table_tennis/converted_upright_axis_filter.pkl"
-    output_dir = "data/table_tennis/converted_upright_axis_trans2.pkl"
+    output_dir = "data/table_tennis/converted_hybrik_trans2.pkl"
     # output_dir = "data/tram_example.pkl"
     if upright_start:
         joblib.dump(amass_full_motion_dict, output_dir, compress=True)
